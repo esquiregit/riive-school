@@ -1,0 +1,124 @@
+<?php
+    require_once "classes/check_login.php";
+    require_once "classes/check_admin_teacher.php";
+    require_once "classes/after_nine_marking_xml.php";
+    require_once "classes/sms.php";
+    require_once "classes/audit_trail.php";
+    require_once "classes/methods.php";
+    require_once "classes/parent.php";
+    require_once "classes/student.php";
+    require_once "classes/teacher.php";
+    $_SESSION['riive_school_page'] = 'SMS';
+    
+    $conn                 = $pdo->open();
+    $error                = $error_message = $success = $success_message = $phone_number = $message = $contacts = '';
+    $contacts_numbers     = ($_SESSION['riive_school_access_level'] == 'School Admin') ? Parents::read_parents($conn) : Parents::read_class_students_parents($conn);
+    $contact_array_string = '';
+    $phone_numbers        = array();
+    $classes              = Student::get_classes();
+    $pdo->close();
+?>
+        <?php require_once "includes/header.php"; ?>
+        <?php require_once "includes/sidebar.php"; ?>
+
+        <div class="page-wrapper">
+            <div class="row page-titles">
+                <div class="col-md-5 align-self-center">
+                    <h3 class="text-white">SMS Individual</h3>
+                </div>
+                <div class="col-md-7 align-self-center">
+                </div>
+            </div>
+
+            <div class="container-fluid">
+            	<form action="" method="POST" role="form">
+                    <div class="alert alert-info alert-dismissible hide text-center font-20 m-t-10" id="send-sms">
+                        <strong>Sending SMS. Please Wait....</strong>
+                    </div>
+            		<div class="row small-form-0">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <div class="checkbox">
+                                    <label><input type="checkbox" id="checkbox" checked> <span id="checkbox-label">Send To Individual</span></label>
+                                </div>
+                            </div>
+                        </div>
+	            		<?php if($_SESSION['riive_school_access_level'] == 'School Admin'){ ?>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label id="receiver-label">Receiver</label>
+                                    <select id="phone_number" name="phone_number" class="form-control show">
+                                        <option value="default">-- Select Receiver --</option>
+                                        <?php foreach($classes as $classs){
+                                            $full_class = ($classs == 1 || $classs == 2 || $classs == 3 || $classs == 4 || $classs == 5 || $classs == 6) ? 'Class ' . $classs : $classs;
+                                            $class_list = Parents::read_parents_by_class($classs, $conn);
+                                            $count      = count($class_list);
+                                        ?>
+                                            <optgroup label="<?php echo $full_class . ' (' . $count; echo $count == 1 ? ' Student)' : ' Students)'; ?>">
+                                                <?php foreach($class_list as $contact){
+                                                    $name = empty($contact->othernames) ? $contact->firstname . ' ' . $contact->lastname : $contact->firstname . ' ' . $contact->othernames . ' ' . $contact->lastname;
+                                                ?>
+                                                <option title="<?php echo $contact->phone ?>" value="<?php echo $contact->phone ?>"><?php echo Methods::strtocapital($name) . "'s " . ucfirst($contact->relation); ?></option>
+                                                <?php } ?>
+                                            </optgroup>
+                                        <?php } ?>
+                                    </select>
+
+                                    <select multiple="multiple" style="height: 150px !important" id="phone_numbers" name="phone_numbers[]" class="form-control hide">
+                                        <option value="default">-- Select Receivers --</option>
+                                        <?php foreach($classes as $classs){
+                                            $full_class = ($classs == 1 || $classs == 2 || $classs == 3 || $classs == 4 || $classs == 5 || $classs == 6) ? 'Class ' . $classs : $classs;
+                                            $class_list = Parents::read_parents_by_class($classs, $conn);
+                                            $count      = count($class_list);
+                                        ?>
+                                            <optgroup label="<?php echo $full_class . ' (' . $count; echo $count == 1 ? ' Student)' : ' Students)'; ?>">
+                                                <?php foreach(Parents::read_parents_by_class($classs, $conn) as $contact){
+                                                    $name = empty($contact->othernames) ? $contact->firstname . ' ' . $contact->lastname : $contact->firstname . ' ' . $contact->othernames . ' ' . $contact->lastname;
+                                                ?>
+                                                <option title="<?php echo $contact->phone ?>" value="<?php echo $contact->phone ?>"><?php echo Methods::strtocapital($name) . "'s " . ucfirst($contact->relation); ?></option>
+                                                <?php } ?>
+                                            </optgroup>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                            </div>
+                        <?php } else { ?>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label id="receiver-label">Receiver</label>
+                                    <select id="phone_number" name="phone_number" class="form-control show">
+                                        <option value="default">-- Select Receiver --</option>
+                                        <?php foreach($contacts_numbers as $contact){
+                                            $name = empty($contact->othernames) ? $contact->firstname . ' ' . $contact->lastname : $contact->firstname . ' ' . $contact->othernames . ' ' . $contact->lastname;
+                                        ?>
+                                        <option title="<?php echo $contact->phone ?>" value="<?php echo $contact->phone ?>"><?php echo Methods::strtocapital($name) . "'s " . ucfirst($contact->relation); ?></option>
+                                        <?php } ?>
+                                    </select>
+
+                                    <select multiple="multiple" style="height: auto !important" id="phone_numbers" name="phone_numbers[]" class="form-control hide">
+                                        <option value="default">-- Select Receivers --</option>
+                                        <?php foreach($contacts_numbers as $contact){
+                                            $name = empty($contact->othernames) ? $contact->firstname . ' ' . $contact->lastname : $contact->firstname . ' ' . $contact->othernames . ' ' . $contact->lastname;
+                                        ?>
+                                        <option title="<?php echo $contact->phone ?>" value="<?php echo $contact->phone ?>"><?php echo Methods::strtocapital($name) . "'s " . ucfirst($contact->relation); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                            </div>
+                        <?php } ?>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea class="form-control" name="message" value="<?php echo $message; ?>" placeholder='<?php echo "Type SMS Here..."; ?>'><?php echo $message; ?></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group text-center">
+                                <button type="submit" name="sendsms" id="sendsms" class="btn btn-rounded btn-info"><i class="fa fa-paper-plane"></i> Send SMS</button>
+                            </div>
+                        </div>
+            		</div>
+            	</form>
+            </div>
+    
+    <?php require_once "includes/footer.php"; ?>

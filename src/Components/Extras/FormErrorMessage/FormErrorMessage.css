@@ -1,0 +1,14 @@
+.error-message { 
+    display: block;
+    width: 100%;
+    text-align: left;
+    color: red;
+    font-size: 14px;
+}
+.success-message { 
+    display: block;
+    width: 100%;
+    text-align: left;
+    color: green;
+    font-size: 14px;
+}

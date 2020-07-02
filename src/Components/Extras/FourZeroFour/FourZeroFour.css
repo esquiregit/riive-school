@@ -1,0 +1,24 @@
+.error-404 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100wh;
+    height: 100vh;
+    background: linear-gradient(white, red);
+}
+.error-404 p { color: #012; }
+p.first {
+    font-weight: 700;
+    font-size: 50px;
+    margin-bottom: -200px;
+}
+p.middle {
+    font-weight: 700;
+    font-size: 200px;
+}
+p.last {
+    font-weight: 500;
+    font-size: 40px;
+    margin-top: -200px;
+}
